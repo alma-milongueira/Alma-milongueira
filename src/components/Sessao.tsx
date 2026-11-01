@@ -5,12 +5,14 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { repositorioLocal } from "@/lib/data/local";
 import { criarRepositorioNuvem } from "@/lib/data/nuvem";
 import type { Repositorio } from "@/lib/data/tipos";
+import { criarFaixasNuvem, faixasLocais, type RepositorioFaixas } from "@/lib/estudio/repositorio";
 import { supabase, supabaseConfigurado } from "@/lib/supabase/client";
 
 type Ctx = {
   pronto: boolean;
   usuario: User | null;
   repo: Repositorio;
+  faixas: RepositorioFaixas;
   nuvemDisponivel: boolean;
   sair: () => Promise<void>;
 };
@@ -19,6 +21,7 @@ const SessaoCtx = createContext<Ctx>({
   pronto: false,
   usuario: null,
   repo: repositorioLocal,
+  faixas: faixasLocais,
   nuvemDisponivel: false,
   sair: async () => {},
 });
@@ -53,6 +56,7 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
       usuario,
       nuvemDisponivel: supabaseConfigurado,
       repo: sb && usuario ? criarRepositorioNuvem(sb, usuario.id) : repositorioLocal,
+      faixas: sb && usuario ? criarFaixasNuvem(sb, usuario.id) : faixasLocais,
       sair: async () => {
         await sb?.auth.signOut();
       },

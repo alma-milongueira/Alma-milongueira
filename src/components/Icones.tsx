@@ -195,3 +195,97 @@ export function Fechar(p: P) {
     </svg>
   );
 }
+
+export function Microfone(p: P) {
+  return (
+    <svg {...base(p)}>
+      <rect x="9" y="3" width="6" height="11" rx="3" />
+      <path d="M5.5 11a6.5 6.5 0 0013 0M12 17.5V21M8.5 21h7" />
+    </svg>
+  );
+}
+
+export function Gravar(p: P) {
+  return (
+    <svg {...base(p)}>
+      <circle cx="12" cy="12" r="7" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function Inicio(p: P) {
+  return (
+    <svg {...base(p)}>
+      <path d="M6 5v14" />
+      <path d="M18 5.5v13L8.5 12z" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function Pausa(p: P) {
+  return (
+    <svg {...base(p)}>
+      <rect x="6.5" y="5" width="4" height="14" rx="1" fill="currentColor" />
+      <rect x="13.5" y="5" width="4" height="14" rx="1" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function Repetir(p: P) {
+  return (
+    <svg {...base(p)}>
+      <path d="M17 3l3 3-3 3" />
+      <path d="M4 12v-1a5 5 0 015-5h11" />
+      <path d="M7 21l-3-3 3-3" />
+      <path d="M20 12v1a5 5 0 01-5 5H4" />
+    </svg>
+  );
+}
+
+export function Metronomo(p: P) {
+  return (
+    <svg {...base(p)}>
+      <path d="M9 3h6l4 18H5z" />
+      <path d="M12 16l5-9" />
+      <path d="M7.5 15h9" />
+    </svg>
+  );
+}
+
+export function Compartilhar(p: P) {
+  return (
+    <svg {...base(p)}>
+      <path d="M12 15V3M7.5 7.5L12 3l4.5 4.5" />
+      <path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+    </svg>
+  );
+}
+
+export function Baixar(p: P) {
+  return (
+    <svg {...base(p)}>
+      <path d="M12 3v12M7.5 10.5L12 15l4.5-4.5" />
+      <path d="M5 21h14" />
+    </svg>
+  );
+}
+
+export function Ajustes(p: P) {
+  return (
+    <svg {...base(p)}>
+      <path d="M5 4v16M12 4v16M19 4v16" />
+      <circle cx="5" cy="14" r="2" fill="currentColor" />
+      <circle cx="12" cy="8" r="2" fill="currentColor" />
+      <circle cx="19" cy="15" r="2" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function Lupa(p: P) {
+  return (
+    <svg {...base(p)}>
+      <circle cx="10.5" cy="10.5" r="6" />
+      <path d="M15 15l5 5" />
+    </svg>
+  );
+}

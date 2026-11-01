@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Cabecalho } from "@/components/Cabecalho";
 import { CifraEditor } from "@/components/cifra/CifraEditor";
 import { IdeiasPainel } from "@/components/ideias/IdeiasPainel";
+import { Estudio } from "@/components/estudio/Estudio";
 import { LetraEditor } from "@/components/letra/LetraEditor";
 import { FichaCampos } from "@/components/projeto/FichaCampos";
 import { useSessao } from "@/components/Sessao";
@@ -14,10 +15,11 @@ import { Lixo } from "@/components/Icones";
 import { novoId, type AlteracaoProjeto, type Projeto } from "@/lib/data/tipos";
 import { RITMOS } from "@/lib/music/ritmos";
 
-type Aba = "letra" | "cifra" | "ideias" | "ficha";
+type Aba = "letra" | "cifra" | "estudio" | "ideias" | "ficha";
 const ABAS: { id: Aba; nome: string }[] = [
   { id: "letra", nome: "Letra" },
   { id: "cifra", nome: "Cifra" },
+  { id: "estudio", nome: "Estúdio" },
   { id: "ideias", nome: "Ideias" },
   { id: "ficha", nome: "Ficha" },
 ];
@@ -138,7 +140,7 @@ export function EditorProjeto() {
         }
       />
       <nav
-        className="sticky top-[4.6rem] z-20 grid grid-cols-4 gap-1 border-b border-couro/15 bg-creme/95 p-1.5 backdrop-blur"
+        className="sticky top-[4.6rem] z-20 grid grid-cols-5 gap-1 border-b border-couro/15 bg-creme/95 p-1.5 backdrop-blur"
         aria-label="Partes do projeto"
       >
         {ABAS.map((a) => (
@@ -146,7 +148,7 @@ export function EditorProjeto() {
             key={a.id}
             aria-pressed={aba === a.id}
             onClick={() => setAba(a.id)}
-            className={`min-h-12 rounded-xl text-base font-bold ${aba === a.id ? "bg-couro text-palha" : "text-couro-escuro active:bg-creme-escuro"}`}
+            className={`min-h-12 rounded-xl text-[0.95rem] font-bold ${aba === a.id ? "bg-couro text-palha" : "text-couro-escuro active:bg-creme-escuro"}`}
           >
             {a.nome}
           </button>
@@ -158,6 +160,7 @@ export function EditorProjeto() {
         {aba === "cifra" && (
           <CifraEditor cifra={p.cifra} tom={p.tom} capo={p.capo} afinacao={p.afinacao} letra={p.letra} mudar={(alt) => alterar(alt)} />
         )}
+        {aba === "estudio" && <Estudio projeto={p} />}
         {aba === "ideias" && (
           <IdeiasPainel
             ritmoInicial={p.ritmo}

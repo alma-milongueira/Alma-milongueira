@@ -1,10 +1,10 @@
 /* Galpão Estúdio — service worker (offline básico) */
-const VERSAO = "galpao-v1";
+const VERSAO = "galpao-v2";
 const CACHE_PAGINAS = `${VERSAO}-paginas`;
 const CACHE_ESTATICO = `${VERSAO}-estatico`;
 
 const PAGINAS = ["/", "/projetos", "/projeto", "/ideias", "/conta", "/offline"];
-const EXTRAS = ["/manifest.webmanifest", "/icones/icone-192.png", "/icones/icone-512.png", "/icones/icone.svg"];
+const EXTRAS = ["/manifest.webmanifest", "/worklets/gravador.js", "/icones/icone-192.png", "/icones/icone-512.png", "/icones/icone.svg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

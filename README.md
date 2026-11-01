@@ -3,13 +3,15 @@
 Estúdio de bolso para compositores de música nativista do Rio Grande do Sul. É um PWA mobile-first: dá pra instalar no celular e funciona sem internet.
 
 > **Fase 1 (pronta):** projetos, editor de letra com contador de sílabas e rimas, cifras com transposição, capotraste e afinações, e IA de acordes e temas.
-> Fases 2–4 (gravação, mixer, alinhamento, convites…) entram depois, cada uma com confirmação.
+> **Fase 2 (pronta):** estúdio multipista com faixas empilhadas (inserir acima/abaixo), gravação com guia e contagem, calibração de latência, mixer com EQ, alinhamento manual, exportação MP3 de 5–7 MB e envio pelo WhatsApp.
+> Fases 3–4 (importar do WhatsApp, convites, alinhamento automático…) entram depois, cada uma com confirmação.
 
 ## Stack
 
 - Next.js 16 (App Router) + TypeScript + Tailwind CSS 4
-- Supabase: Auth (link por e-mail e Google), Postgres com RLS (Storage entra na Fase 2)
+- Supabase: Auth (link por e-mail e Google), Postgres com RLS, Storage (áudios)
 - PWA: `app/manifest.ts` + `public/sw.js` (offline básico)
+- Web Audio API (AudioWorklet para gravar, OfflineAudioContext para mixar) + lamejs para codificar MP3 no aparelho
 - IA de texto: Gemini **ou** Groq (camada gratuita), sempre chamada pela rota server-side `/api/ia`
 - Vitest para os testes do motor musical
 
@@ -63,6 +65,22 @@ Temas (pago, querência, fronteira, chimarrão, lida campeira) seguem a mesma l�
 
 Formato ChordPro: `[Em]Lá no meu [B7]pago`. Uma linha `{Refrão}` vira título de parte. Ao trocar o tom ou o capotraste, a tela mostra o tom que soa e o **desenho na mão**. Os diagramas são calculados para qualquer afinação (Padrão, Drop D, DADGAD, meio tom abaixo), e o botão “Sugerir capotraste” procura a casa em que os desenhos ficam mais fáceis.
 
+### Estúdio (Fase 2)
+
+Aba **Estúdio** do projeto: as faixas ficam empilhadas e coloridas por instrumento, numa linha do tempo comum marcada em compassos.
+
+- **Inserir faixa acima ou abaixo** da selecionada. A posição na pilha é guardada em `ordem` como número decimal, então dá pra inserir no meio sem renumerar as outras.
+- **Gravar** com guia no fone: as faixas já gravadas, o click no BPM do projeto, os dois ou nada; contagem de entrada de 2 ou 4 tempos. O microfone é capturado por um AudioWorklet (`public/worklets/gravador.js`) com o número exato do quadro do relógio de áudio. Assim a gravação cai no lugar certo da linha do tempo, sem o atraso de início imprevisível do MediaRecorder. O áudio é guardado em MP3 de 128 kbps, codificado no aparelho com lamejs.
+- **Calibração de latência** por saída (alto-falante, fone com fio, fone Bluetooth):
+  - *Teste da batida*: bate palma junto com o click. O app mede o atraso total de saída + entrada e compensa sozinho em toda gravação.
+  - *Teste do toque*: toca na tela junto com o click. Mede só a saída.
+- **Mixer** por faixa: volume, mudo/solo e EQ de 3 bandas (250 Hz, 1 kHz, 4 kHz).
+- **Alinhamento manual**: arrastar a faixa selecionada, botões −10/+10 ms, e arrastar na régua marca um trecho pra tocar em loop e conferir. O deslocamento fica salvo por faixa (`offset_ms`), separado da latência compensada (`latencia_ms`). O pequeno silêncio que o MP3 acrescenta no início é medido no aparelho e descontado na reprodução.
+- **Exportar MP3** só com as faixas marcadas. O bitrate é escolhido entre 32 e 320 kbps pra o arquivo ficar entre 5 e 7 MB. Exceções: uma música com menos de ~2 min não chega a 5 MB nem em 320 kbps, e uma com mais de ~29 min passa de 7 MB mesmo em 32 kbps; nos dois casos o app avisa.
+- **Enviar no WhatsApp**: usa a Web Share API com o arquivo. Se o navegador não suportar, baixa o MP3 e abre `wa.me` com a mensagem (e um link temporário de 7 dias, quando a conta está na nuvem).
+
+No modo local os áudios ficam no IndexedDB do aparelho. Na nuvem vão para o bucket privado `audios` do Supabase Storage, com uma cópia em cache no aparelho.
+
 ## Rodar localmente
 
 ```bash
@@ -80,7 +98,7 @@ Sem as variáveis do Supabase, o app funciona por completo em **modo local**: os
 ### 1. Supabase
 
 1. Crie um projeto em <https://supabase.com>.
-2. **SQL Editor → New query**: cole e rode `supabase/migrations/0001_fase1_projetos.sql`. Se preferir a CLI, use `supabase link` e depois `supabase db push`.
+2. **SQL Editor → New query**: rode, nesta ordem, `supabase/migrations/0001_fase1_projetos.sql` e `0002_fase2_faixas.sql` (cria a tabela `faixas` e o bucket privado `audios` com RLS). Se preferir a CLI, use `supabase link` e depois `supabase db push`.
 3. **Authentication → URL Configuration**
    - *Site URL*: `https://SEU-APP.vercel.app`
    - *Redirect URLs*: `https://SEU-APP.vercel.app/auth/callback` e `http://localhost:3000/auth/callback`
