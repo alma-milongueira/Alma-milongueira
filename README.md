@@ -98,14 +98,19 @@ Sem as variáveis do Supabase, o app funciona por completo em **modo local**: os
 ### 1. Supabase
 
 1. Crie um projeto em <https://supabase.com>.
-2. **SQL Editor → New query**: rode, nesta ordem, `supabase/migrations/0001_fase1_projetos.sql` e `0002_fase2_faixas.sql` (cria a tabela `faixas` e o bucket privado `audios` com RLS). Se preferir a CLI, use `supabase link` e depois `supabase db push`.
-3. **Authentication → URL Configuration**
+2. **SQL Editor → New query**: rode, nesta ordem:
+   - `supabase/migrations/0001_fase1_projetos.sql`
+   - `0002_fase2_faixas.sql` (cria a tabela `faixas` e o bucket privado `audios`, com RLS)
+   - `0003_acessos.sql` (lista de acessos com até 10 e-mails e o administrador) Se preferir a CLI, use `supabase link` e depois `supabase db push`.
+3. **Authentication → Hooks → Before User Created**: ative o hook do tipo *Postgres* e aponte para `public.hook_antes_de_criar_usuario`. Assim ninguém fora da lista consegue nem criar conta. Mesmo sem o hook, a RLS já impede quem não está na lista de ver ou gravar qualquer dado.
+4. **Authentication → Providers → Email**: deixe **Confirm email** ligado. Senão alguém poderia criar conta com um e-mail liberado que não é dele.
+5. **Authentication → URL Configuration**
    - *Site URL*: `https://SEU-APP.vercel.app`
    - *Redirect URLs*: `https://SEU-APP.vercel.app/auth/callback` e `http://localhost:3000/auth/callback`
-4. **Authentication → Providers**
-   - *Email*: já vem ligado (o login é por link mágico).
+6. **Authentication → Providers**
+   - *Email*: já vem ligado (entrada por senha ou por link mágico).
    - *Google*: crie um OAuth Client no Google Cloud Console (tipo “Web”). A URI de redirecionamento autorizada é `https://SEU-PROJETO.supabase.co/auth/v1/callback`. Depois cole o Client ID e o Secret no Supabase.
-5. **Project Settings → API**: copie a `URL` e a `anon public key`.
+7. **Project Settings → API**: copie a `URL` e a `anon public key`.
 
 ### 2. Chave de IA (gratuita)
 
@@ -119,8 +124,19 @@ Sem as variáveis do Supabase, o app funciona por completo em **modo local**: os
 3. Faça o deploy e atualize a *Site URL* do Supabase com o domínio final.
 4. No celular, abra o site e escolha **Adicionar à tela inicial** para instalar o PWA.
 
+## Acessos (até 10 e-mails)
+
+O app é fechado: só entram os e-mails da tabela `acessos`, com no máximo **10, contando o administrador**. O limite é garantido por trigger no banco.
+
+- **Administrador ("quem manda")**: `luiscanabarro@hotmail.com`, definido na migração `0003_acessos.sql`. Na tela **Conta**, ele vê o painel *Acessos*, onde libera e remove e-mails.
+- **Primeiro acesso do administrador**: abra o app → **Conta** → **Criar conta** com esse e-mail e a senha escolhida. Depois confirme pelo link que chega no e-mail. A senha **não** fica no código nem no repositório.
+- **Membros**: depois de liberados, cada um usa **Criar conta** com o próprio e-mail. O login pode ser por senha, link por e-mail ou Google.
+- **Remover alguém** corta o acesso na hora. Os projetos da pessoa continuam guardados, mas ela não consegue mais abrir.
+- **Trocar o administrador ou o limite**: edite `0003_acessos.sql` (e `LIMITE_ACESSOS` em `src/lib/data/acessos.ts`) e rode de novo.
+- **Sem Supabase (modo local)** não há contas nem lista: tudo fica só no aparelho.
+
 ## Segurança
 
-- RLS ligado: cada usuário só lê e altera os próprios projetos, e um trigger impede trocar o dono.
+- RLS ligado: cada usuário só lê e altera os próprios projetos e áudios, e só se o e-mail estiver na lista de acessos. Um trigger impede trocar o dono.
 - As chaves de IA ficam só no servidor (`server-only`). A rota `/api/ia` limita tamanho do pedido e frequência por IP.
 - A `anon key` é pública por design; a proteção dos dados vem do RLS.
