@@ -1,5 +1,6 @@
 // Motor do estúdio: toca as faixas alinhadas, mixer (volume, mudo/solo, EQ 3 bandas),
 // click, contagem de entrada e gravação com relógio exato (AudioWorklet).
+import { desbloquearAudio, obterContexto } from "../audio/contexto";
 import { atrasoDoCodec } from "./mp3";
 import { audiveis, inicioNaLinha, type Faixa } from "./tipos";
 
@@ -39,8 +40,7 @@ export class MotorEstudio {
   tocando = false;
 
   constructor() {
-    const C = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    this.ctx = new C({ latencyHint: "interactive" });
+    this.ctx = obterContexto();
     this.master = this.ctx.createGain();
     this.master.connect(this.ctx.destination);
     this.clickForte = this.criarClick(1760);
@@ -49,7 +49,6 @@ export class MotorEstudio {
 
   fechar() {
     this.parar();
-    this.ctx.close().catch(() => {});
   }
 
   private criarClick(freq: number): AudioBuffer {
@@ -147,6 +146,7 @@ export class MotorEstudio {
 
   async tocar(pos: number, op: OpcoesTocar) {
     this.parar();
+    desbloquearAudio();
     await this.ctx.resume();
     this.posParada = pos;
     this.opcoes = op;
@@ -252,6 +252,7 @@ export class MotorEstudio {
   // ---------------- Captura do microfone ----------------
 
   async abrirCaptura(): Promise<{ parar: () => Promise<{ dados: Float32Array; frame: number }>; cancelar: () => void }> {
+    desbloquearAudio("play-and-record");
     await this.ctx.resume();
     this.moduloCarregado ??= this.ctx.audioWorklet.addModule("/worklets/gravador.js");
     await this.moduloCarregado;

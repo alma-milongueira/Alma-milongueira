@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { desbloquearAudio } from "@/lib/audio/contexto";
 import { escolherBitrate, MB, codificarMp3 } from "@/lib/estudio/mp3";
 import {
   BPM_TESTE,
@@ -349,6 +350,7 @@ export function FolhaCalibrar({
 
   async function toque() {
     if (!motor) return;
+    desbloquearAudio();
     await motor.ctx.resume();
     setRodando("toque");
     toques.current = [];

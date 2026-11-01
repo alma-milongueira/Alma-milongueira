@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { regrasAcordes } from "@/lib/ia/compositor";
 import { ideiasDeTema, LISTA_TEMAS, type IdeiaTema, type TemaId } from "@/lib/ia/temas";
 import { tocarProgressao, type Controle } from "@/lib/audio/tocador";
+import { NOMES_INSTRUMENTO, type InstrumentoId } from "@/lib/audio/instrumentos";
 import { acordeNoTom } from "@/lib/music/harmonia";
 import { TONS_MAIORES, TONS_MENORES } from "@/lib/music/notas";
 import { LISTA_RITMOS, RITMOS, type RitmoId } from "@/lib/music/ritmos";
-import { Faisca, Parar, Play } from "../Icones";
+import { Bombo, Faisca, Gaita, Parar, Play, Violao } from "../Icones";
 import { Botao, Cartao, Chip, Rotulo, classeCampo, useAviso } from "../ui";
 
 type ProgExib = { nome: string; acordes: string[]; comentario: string; origem: "regra" | "variacao" | "ia"; graus?: string[] };
@@ -83,6 +84,7 @@ function PainelAcordes({
   const [tocando, setTocando] = useState<{ id: string; i: number | null } | null>(null);
   const controle = useRef<Controle | null>(null);
   const chave = `${ritmo}|${tom}`;
+  const instrumento = useSyncExternalStore(inscreverInstrumento, lerInstrumento, () => "violao" as InstrumentoId);
 
   useEffect(() => () => controle.current?.parar(), []);
 
@@ -93,7 +95,7 @@ function PainelAcordes({
       return;
     }
     setTocando({ id, i: 0 });
-    controle.current = tocarProgressao(acordes, bpm ?? r.bpmPadrao, ritmo, (i) => {
+    controle.current = tocarProgressao(acordes, bpm ?? r.bpmPadrao, ritmo, instrumento, (i) => {
       if (i === null) setTocando((t) => (t?.id === id ? null : t));
       else setTocando({ id, i });
     });
@@ -160,6 +162,15 @@ function PainelAcordes({
           <b>Levada de {r.nome.toLowerCase()}:</b> {r.batida}
         </p>
       </Cartao>
+
+      <EscolhaInstrumento
+        valor={instrumento}
+        aoMudar={(i) => {
+          controle.current?.parar();
+          setTocando(null);
+          gravarInstrumento(i);
+        }}
+      />
 
       <h3 className="font-titulo text-xl font-bold text-couro-escuro">Do motor de teoria</h3>
       {regras.map((p, k) => (
@@ -348,5 +359,85 @@ function CartaoTema({ ideia, daIA, aoUsar }: { ideia: IdeiaTema; daIA?: boolean;
         </Botao>
       )}
     </Cartao>
+  );
+}
+
+// ---------------- Instrumento para ouvir as ideias (lembrado no aparelho) ----------------
+const CHAVE_INSTRUMENTO = "galpao:instrumento";
+const EVENTO_INSTRUMENTO = "galpao-instrumento";
+const INSTRUMENTOS: InstrumentoId[] = ["violao", "teclado", "baixo", "gaita", "conjunto"];
+
+function lerInstrumento(): InstrumentoId {
+  try {
+    const v = localStorage.getItem(CHAVE_INSTRUMENTO) as InstrumentoId | null;
+    if (v && INSTRUMENTOS.includes(v)) return v;
+  } catch {}
+  return "violao";
+}
+
+function gravarInstrumento(i: InstrumentoId) {
+  try {
+    localStorage.setItem(CHAVE_INSTRUMENTO, i);
+  } catch {}
+  window.dispatchEvent(new Event(EVENTO_INSTRUMENTO));
+}
+
+function inscreverInstrumento(f: () => void) {
+  window.addEventListener(EVENTO_INSTRUMENTO, f);
+  return () => window.removeEventListener(EVENTO_INSTRUMENTO, f);
+}
+
+function IconeTeclado({ tamanho = 22 }: { tamanho?: number }) {
+  return (
+    <svg
+      width={tamanho}
+      height={tamanho}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <rect x="2.5" y="5" width="19" height="14" rx="1.5" />
+      <path d="M7 5v14M12 5v14M17 5v14" />
+      <path d="M5.5 5h3v8h-3zM10.5 5h3v8h-3zM15.5 5h3v8h-3z" fill="currentColor" />
+    </svg>
+  );
+}
+
+function IconeInstrumentoOuvir({ i }: { i: InstrumentoId }) {
+  if (i === "violao") return <Violao tamanho={22} />;
+  if (i === "teclado") return <IconeTeclado />;
+  if (i === "baixo") return <Violao tamanho={22} />;
+  if (i === "gaita") return <Gaita tamanho={22} />;
+  return <Bombo tamanho={22} />;
+}
+
+function EscolhaInstrumento({ valor, aoMudar }: { valor: InstrumentoId; aoMudar: (i: InstrumentoId) => void }) {
+  return (
+    <div>
+      <Rotulo>Ouvir com</Rotulo>
+      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+        {INSTRUMENTOS.map((i) => (
+          <button
+            key={i}
+            type="button"
+            aria-pressed={valor === i}
+            onClick={() => aoMudar(i)}
+            className={`flex min-h-12 shrink-0 items-center gap-2 rounded-full border-2 px-4 font-semibold ${
+              valor === i ? "border-vermelho bg-vermelho text-palha" : "border-couro/25 bg-palha text-couro-escuro"
+            }`}
+          >
+            <IconeInstrumentoOuvir i={i} />
+            {NOMES_INSTRUMENTO[i]}
+          </button>
+        ))}
+      </div>
+      <p className="mt-1 text-xs text-terra">
+        {valor === "conjunto" ? "Violão, baixo e gaita juntos." : "Som feito no próprio app, funciona sem internet."} Toca ▶ numa progressão
+        pra ouvir.
+      </p>
+    </div>
   );
 }

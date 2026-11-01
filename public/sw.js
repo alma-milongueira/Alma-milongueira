@@ -1,5 +1,5 @@
 /* Alma Milongueira — service worker (offline básico) */
-const VERSAO = "galpao-v3";
+const VERSAO = "galpao-v4";
 const CACHE_PAGINAS = `${VERSAO}-paginas`;
 const CACHE_ESTATICO = `${VERSAO}-estatico`;
 
