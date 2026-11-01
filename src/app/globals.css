@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+@theme {
+  --color-vermelho: #b8232b;
+  --color-vermelho-escuro: #8a1a20;
+  --color-verde: #1f7a3e;
+  --color-verde-escuro: #145a2c;
+  --color-amarelo: #f2b705;
+  --color-amarelo-claro: #f8d974;
+  --color-couro: #8b5a2b;
+  --color-couro-escuro: #5a3a1f;
+  --color-terra: #6e4b33;
+  --color-creme: #f6eedc;
+  --color-creme-escuro: #eadbbe;
+  --color-palha: #fbf6ea;
+  --color-carvao: #2a1e16;
+
+  --font-titulo: var(--font-alegreya), Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-nunito), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-cifra: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: var(--color-creme);
+  color: var(--color-carvao);
+  font-family: var(--font-sans);
+  overscroll-behavior-y: none;
+}
+
+/* Textura leve de couro/papel no fundo */
+.fundo-galpao {
+  background-color: var(--color-creme);
+  background-image:
+    radial-gradient(circle at 20% 10%, rgb(139 90 43 / 0.06), transparent 40%),
+    radial-gradient(circle at 80% 60%, rgb(110 75 51 / 0.05), transparent 45%);
+}
+
+/* Faixa com as cores da bandeira do RS */
+.faixa-gaucha {
+  background: linear-gradient(100deg, var(--color-verde) 0 33%, var(--color-vermelho) 33% 66%, var(--color-amarelo) 66% 100%);
+}
+
+.couro {
+  background-color: var(--color-couro-escuro);
+  background-image:
+    repeating-linear-gradient(45deg, rgb(255 255 255 / 0.025) 0 2px, transparent 2px 6px),
+    radial-gradient(ellipse at top, rgb(255 255 255 / 0.08), transparent 70%);
+}
+
+/* Costura de pespontos */
+.pesponto {
+  outline: 2px dashed rgb(242 183 5 / 0.45);
+  outline-offset: -6px;
+}
+
+.pb-nav {
+  padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+}
+
+.cifra-linha {
+  font-family: var(--font-cifra);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
