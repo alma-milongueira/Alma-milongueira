@@ -1,5 +1,5 @@
-/* Galpão Estúdio — service worker (offline básico) */
-const VERSAO = "galpao-v2";
+/* Alma Milongueira — service worker (offline básico) */
+const VERSAO = "galpao-v3";
 const CACHE_PAGINAS = `${VERSAO}-paginas`;
 const CACHE_ESTATICO = `${VERSAO}-estatico`;
 

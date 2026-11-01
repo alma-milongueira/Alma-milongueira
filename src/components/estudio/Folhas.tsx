@@ -523,7 +523,7 @@ export function FolhaExportar({
   const dur = escolhidas.length ? duracaoDe(escolhidas) : 0;
   const plano = escolherBitrate(dur);
   const nome = nomeArquivo(titulo);
-  const texto = `🎶 ${titulo} — prévia feita no Galpão Estúdio`;
+  const texto = `🎶 ${titulo} — prévia feita no Alma Milongueira`;
 
   async function gerar() {
     if (!motor) return;

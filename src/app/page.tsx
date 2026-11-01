@@ -42,7 +42,7 @@ export default function Inicio() {
           <Cuia tamanho={40} />
           <p className="font-titulo text-lg">{ola}!</p>
         </div>
-        <h1 className="mt-3 font-titulo text-4xl font-extrabold leading-tight text-palha">Galpão Estúdio</h1>
+        <h1 className="mt-3 font-titulo text-4xl font-extrabold leading-tight text-palha">Alma Milongueira</h1>
         <p className="mt-2 text-lg text-creme/85">
           Teu estúdio de bolso pra compor milonga, vaneira, chamamé e o que mais vier da querência.
         </p>

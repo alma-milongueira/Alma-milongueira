@@ -1,4 +1,4 @@
--- Galpão Estúdio — Fase 2: faixas de áudio, mixer e alinhamento
+-- Alma Milongueira — Fase 2: faixas de áudio, mixer e alinhamento
 -- Depende de 0001_fase1_projetos.sql
 
 create table if not exists public.faixas (

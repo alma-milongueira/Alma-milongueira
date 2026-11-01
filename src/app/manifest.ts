@@ -3,8 +3,8 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
-    name: "Galpão Estúdio",
-    short_name: "Galpão",
+    name: "Alma Milongueira",
+    short_name: "Alma Milongueira",
     description: "Estúdio de bolso para compositores de música nativista do Rio Grande do Sul.",
     lang: "pt-BR",
     start_url: "/",

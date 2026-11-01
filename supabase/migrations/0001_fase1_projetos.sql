@@ -1,4 +1,4 @@
--- Galpão Estúdio — Fase 1: projetos (letra, cifra e ficha técnica)
+-- Alma Milongueira — Fase 1: projetos (letra, cifra e ficha técnica)
 -- Rode no SQL Editor do Supabase ou com `supabase db push`.
 
 create extension if not exists "pgcrypto";

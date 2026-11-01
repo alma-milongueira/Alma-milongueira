@@ -1,4 +1,4 @@
-# Galpão Estúdio
+# Alma Milongueira
 
 Estúdio de bolso para compositores de música nativista do Rio Grande do Sul. É um PWA mobile-first: dá pra instalar no celular e funciona sem internet.
 

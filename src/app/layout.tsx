@@ -10,10 +10,10 @@ const alegreya = Alegreya({ variable: "--font-alegreya", subsets: ["latin"], wei
 const nunito = Nunito_Sans({ variable: "--font-nunito", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: { default: "Galpão Estúdio", template: "%s · Galpão Estúdio" },
+  title: { default: "Alma Milongueira", template: "%s · Alma Milongueira" },
   description: "Estúdio de bolso para compositores de música nativista do Rio Grande do Sul.",
-  applicationName: "Galpão Estúdio",
-  appleWebApp: { capable: true, title: "Galpão", statusBarStyle: "black-translucent" },
+  applicationName: "Alma Milongueira",
+  appleWebApp: { capable: true, title: "Alma Milongueira", statusBarStyle: "black-translucent" },
   icons: {
     icon: [
       { url: "/icones/icone-192.png", sizes: "192x192", type: "image/png" },
