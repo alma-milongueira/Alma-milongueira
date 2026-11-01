@@ -15,6 +15,9 @@ import {
   validarTemasIA,
 } from "@/lib/ia/compositor";
 
+// A IA pode levar alguns segundos (tentativas + reserva)
+export const maxDuration = 60;
+
 // Limite simples por IP (protege a cota gratuita). Em produção com várias instâncias,
 // troque por um limitador compartilhado (ex.: Upstash) se precisar.
 const janelas = new Map<string, number[]>();

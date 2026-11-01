@@ -38,3 +38,18 @@ describe("descoberta de modelo", () => {
     expect(limparNomeModelo("")).toBeUndefined();
   });
 });
+
+import { escolherModeloGeminiLeve } from "../ia/modelos";
+describe("modelo leve", () => {
+  it("escolhe o flash-lite mais novo", () => {
+    const gc = ["generateContent"];
+    expect(
+      escolherModeloGeminiLeve([
+        { name: "models/gemini-3.5-flash", supportedGenerationMethods: gc },
+        { name: "models/gemini-2.5-flash-lite", supportedGenerationMethods: gc },
+        { name: "models/gemini-3.5-flash-lite", supportedGenerationMethods: gc },
+      ]),
+    ).toBe("gemini-3.5-flash-lite");
+    expect(escolherModeloGeminiLeve([])).toBeNull();
+  });
+});

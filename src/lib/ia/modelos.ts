@@ -34,6 +34,15 @@ export function escolherModeloGemini(lista: ModeloGemini[]): string | null {
   return texto[0] ?? null;
 }
 
+/** Modelo mais leve (flash-lite) para quando o principal está sobrecarregado. */
+export function escolherModeloGeminiLeve(lista: ModeloGemini[]): string | null {
+  const nomes = lista
+    .filter((m) => m.supportedGenerationMethods?.includes("generateContent"))
+    .map((m) => m.name.replace(/^models\//, ""))
+    .filter((n) => /^gemini-\d/.test(n) && /flash-lite/.test(n) && !/(image|tts|audio|live|preview|exp)/.test(n));
+  return [...nomes].sort((a, b) => compararVersao(versao(b), versao(a)) || a.length - b.length)[0] ?? null;
+}
+
 export type ModeloGroq = { id: string; active?: boolean };
 
 export function escolherModeloGroq(lista: ModeloGroq[]): string | null {
