@@ -28,5 +28,9 @@ export function traduzirErroAuth(msg: string): string {
   if (m.includes("rate limit") || m.includes("too many")) return "Muitas tentativas seguidas. Espera um pouco e tenta de novo.";
   if (m.includes("invalid email") || m.includes("unable to validate email")) return "Esse e-mail não parece válido.";
   if (m.includes("failed to fetch") || m.includes("network")) return "Sem conexão. Confere a internet e tenta de novo.";
+  if (m.includes("invalid path specified"))
+    return "Endereço do Supabase errado na Vercel (NEXT_PUBLIC_SUPABASE_URL). Use só https://SEU-PROJETO.supabase.co.";
+  if (m.includes("invalid api key") || m.includes("no api key"))
+    return "Chave do Supabase errada na Vercel (NEXT_PUBLIC_SUPABASE_ANON_KEY).";
   return msg;
 }
