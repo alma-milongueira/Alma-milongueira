@@ -1,0 +1,6 @@
+Sons de instrumentos usados no Alma Milongueira (licença Creative Commons Atribuição 3.0 — https://creativecommons.org/licenses/by/3.0/)
+
+- Violão nylon e piano: "tonejs-instruments", por Nicholaus Brosowsky — https://github.com/nbrosowsky/tonejs-instruments
+- Acordeom (gaita) e contrabaixo acústico: "FluidR3_GM" (Frank Wen), convertido por Benjamin Gleitzman em "midi-js-soundfonts" — https://github.com/gleitz/midi-js-soundfonts
+
+Alterações: notas selecionadas, convertidas para mono 96 kbps, cortadas e com fade-out.

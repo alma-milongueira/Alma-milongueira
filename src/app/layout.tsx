@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Alegreya, Nunito_Sans } from "next/font/google";
-import { NavInferior } from "@/components/NavInferior";
+import { Portao } from "@/components/Portao";
 import { RegistrarSW } from "@/components/RegistrarSW";
 import { SessaoProvider } from "@/components/Sessao";
 import { AvisosProvider } from "@/components/ui";
@@ -36,8 +36,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className="fundo-galpao min-h-dvh">
         <SessaoProvider>
           <AvisosProvider>
-            <div className="pb-nav mx-auto min-h-dvh max-w-lg">{children}</div>
-            <NavInferior />
+            <Portao>{children}</Portao>
           </AvisosProvider>
         </SessaoProvider>
         <RegistrarSW />

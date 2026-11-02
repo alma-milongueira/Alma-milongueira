@@ -1,7 +1,8 @@
 // Tocador de progressões: levada de cada ritmo em violão, teclado, baixo, gaita ou conjunto.
 import { notasDoAcorde, parseAcorde } from "../music/acordes";
 import { AFINACOES, buscarPosicoes } from "../music/afinacoes";
-import { desbloquearAudio } from "./contexto";
+import { bancoPronto, carregarInstrumento, tocarAmostra, type InstrumentoAmostrado } from "./amostrador";
+import { desbloquearAudio, obterContexto } from "./contexto";
 import { criarAmbiencia, tocarCorda, tocarGaita, tocarPiano, type InstrumentoId } from "./instrumentos";
 import type { RitmoId } from "../music/ritmos";
 
@@ -107,14 +108,75 @@ function vozes(nome: string, inst: Exclude<InstrumentoId, "conjunto">): Vozes | 
  * Toca a progressão com a levada do ritmo no instrumento escolhido.
  * Chamar a partir do toque do usuário (desbloqueia o som no iPhone).
  */
+/** Toca uma nota: gravação real se já carregou; senão o som sintetizado (nunca fica mudo). */
+function tocarNota(ctx: AudioContext, bus: AudioNode, inst: InstrumentoAmostrado, midi: number, t: number, vol: number, dur?: number) {
+  const banco = bancoPronto(inst);
+  if (banco) return tocarAmostra(ctx, bus, banco, inst, midi, t, vol, dur);
+  if (inst === "violao") return tocarCorda(ctx, bus, midi, t, vol, "nylon", dur);
+  if (inst === "baixo") return tocarCorda(ctx, bus, midi, t, vol, "baixo", dur);
+  if (inst === "teclado") return tocarPiano(ctx, bus, midi, t, vol, dur ?? 1);
+  return tocarGaita(ctx, bus, midi, t, vol, dur ?? 0.5);
+}
+
+export function instrumentosDe(i: InstrumentoId): InstrumentoAmostrado[] {
+  return i === "conjunto" ? ["violao", "baixo", "gaita"] : [i];
+}
+
+/** Começa a baixar as gravações do instrumento em segundo plano. */
+export function preCarregar(i: InstrumentoId) {
+  try {
+    const ctx = obterContexto();
+    instrumentosDe(i).forEach((x) => carregarInstrumento(ctx, x).catch(() => {}));
+  } catch {}
+}
+
+/**
+ * Toca a progressão com a levada do ritmo no instrumento escolhido.
+ * Chamar a partir do toque do usuário (desbloqueia o som no iPhone).
+ */
 export function tocarProgressao(
   acordes: string[],
   bpm: number,
   ritmo: RitmoId,
   instrumento: InstrumentoId,
   aoMudarAcorde?: (i: number | null) => void,
+  aoCarregar?: (carregando: boolean) => void,
 ): Controle {
   const ctx = desbloquearAudio();
+  let cancelado = false;
+  let parar = () => {};
+  const precisa = instrumentosDe(instrumento).filter((x) => !bancoPronto(x));
+  const iniciar = () => {
+    if (!cancelado) parar = agendar(ctx, acordes, bpm, ritmo, instrumento, aoMudarAcorde);
+  };
+  if (!precisa.length) iniciar();
+  else {
+    aoCarregar?.(true);
+    // espera as gravações até 6 s; se não vierem (sem internet na 1ª vez), toca com o som sintetizado
+    const limite = new Promise((r) => setTimeout(r, 6000));
+    Promise.race([Promise.allSettled(precisa.map((x) => carregarInstrumento(ctx, x))), limite]).then(() => {
+      aoCarregar?.(false);
+      iniciar();
+    });
+  }
+  return {
+    parar() {
+      cancelado = true;
+      aoCarregar?.(false);
+      parar();
+      aoMudarAcorde?.(null);
+    },
+  };
+}
+
+function agendar(
+  ctx: AudioContext,
+  acordes: string[],
+  bpm: number,
+  ritmo: RitmoId,
+  instrumento: InstrumentoId,
+  aoMudarAcorde?: (i: number | null) => void,
+): () => void {
   // barramento desta execução: compressor + ambiência de galpão
   const bus = ctx.createGain();
   bus.gain.value = 0.9;
@@ -123,16 +185,18 @@ export function tocarProgressao(
   comp.ratio.value = 4;
   const amb = criarAmbiencia(ctx);
   const envio = ctx.createGain();
-  envio.gain.value = 0.18;
+  envio.gain.value = 0.14;
   bus.connect(comp).connect(ctx.destination);
   bus.connect(envio).connect(amb).connect(comp);
 
   const levada = LEVADAS[ritmo];
   const seg = 60 / bpm;
   const compasso = levada.tempos * seg;
-  const t0 = ctx.currentTime + 0.15;
+  const t0 = ctx.currentTime + 0.12;
   const timers: ReturnType<typeof setTimeout>[] = [];
   const conjunto = instrumento === "conjunto";
+  const nota = (inst: InstrumentoAmostrado, midi: number, t: number, vol: number, dur?: number) =>
+    tocarNota(ctx, bus, inst, midi, t, vol, dur);
 
   acordes.forEach((nome, i) => {
     const inicio = t0 + i * compasso;
@@ -143,30 +207,29 @@ export function tocarProgressao(
     if (!vViolao || !vTeclado || !vBaixo || !vGaita) return;
 
     // Conjunto: gaita sustentando o acorde no compasso inteiro, por baixo de tudo
-    if (conjunto) vGaita.acorde.forEach((m) => tocarGaita(ctx, bus, m, inicio, 0.1, compasso * 0.96));
+    if (conjunto) vGaita.acorde.forEach((m) => nota("gaita", m, inicio, 0.1, compasso * 0.96));
 
     for (const ev of levada.eventos) {
       const t = inicio + ev.t * seg;
       const ehBaixo = ev.tipo !== "acorde";
       if (instrumento === "violao" || conjunto) {
-        if (ehBaixo && !conjunto) tocarCorda(ctx, bus, ev.tipo === "baixo" ? vViolao.baixo : vViolao.quinta, t, 0.55, "nylon");
-        if (!ehBaixo) vViolao.acorde.forEach((m, k) => tocarCorda(ctx, bus, m, t + k * 0.014, 0.28, "nylon", seg * 0.9));
+        if (ehBaixo && !conjunto) nota("violao", ev.tipo === "baixo" ? vViolao.baixo : vViolao.quinta, t, 0.5);
+        if (!ehBaixo) vViolao.acorde.forEach((m, k) => nota("violao", m, t + k * 0.016, 0.24, seg * 0.9));
       }
       if (instrumento === "baixo" || conjunto) {
-        if (ehBaixo)
-          tocarCorda(ctx, bus, ev.tipo === "baixo" ? vBaixo.baixo : vBaixo.quinta, t, conjunto ? 0.6 : 0.85, "baixo", seg * 0.95);
+        if (ehBaixo) nota("baixo", ev.tipo === "baixo" ? vBaixo.baixo : vBaixo.quinta, t, conjunto ? 0.6 : 0.85, seg * 0.95);
       }
       if (instrumento === "teclado") {
-        if (ehBaixo) tocarPiano(ctx, bus, ev.tipo === "baixo" ? vTeclado.baixo : vTeclado.quinta, t, 0.5, seg * 1.1);
-        else vTeclado.acorde.forEach((m, k) => tocarPiano(ctx, bus, m, t + k * 0.004, 0.24, seg * 0.6));
+        if (ehBaixo) nota("teclado", ev.tipo === "baixo" ? vTeclado.baixo : vTeclado.quinta, t, 0.45, seg * 1.1);
+        else vTeclado.acorde.forEach((m, k) => nota("teclado", m, t + k * 0.004, 0.22, seg * 0.6));
       }
       if (instrumento === "gaita") {
         // mão esquerda da gaita: botão de baixo (com oitava) e botão de acorde, curtinhos
         if (ehBaixo) {
           const b = ev.tipo === "baixo" ? vGaita.baixo : vGaita.quinta;
-          tocarGaita(ctx, bus, b, t, 0.3, seg * 0.6);
-          tocarGaita(ctx, bus, b + 12, t, 0.16, seg * 0.6);
-        } else vGaita.acorde.forEach((m) => tocarGaita(ctx, bus, m, t, 0.15, seg * 0.38));
+          nota("gaita", b, t, 0.3, seg * 0.6);
+          nota("gaita", b + 12, t, 0.16, seg * 0.6);
+        } else vGaita.acorde.forEach((m) => nota("gaita", m, t, 0.15, seg * 0.38));
       }
     }
     timers.push(setTimeout(() => aoMudarAcorde?.(i), Math.max(0, (inicio - ctx.currentTime) * 1000)));
@@ -190,12 +253,8 @@ export function tocarProgressao(
       setTimeout(desligar, 2500); // deixa a última nota soar
     }, total + 200),
   );
-
-  return {
-    parar() {
-      timers.forEach(clearTimeout);
-      aoMudarAcorde?.(null);
-      desligar();
-    },
+  return () => {
+    timers.forEach(clearTimeout);
+    desligar();
   };
 }

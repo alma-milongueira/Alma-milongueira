@@ -9,7 +9,7 @@ Estúdio de bolso para compositores de música nativista do Rio Grande do Sul. �
 ## Stack
 
 - Next.js 16 (App Router) + TypeScript + Tailwind CSS 4
-- Supabase: Auth (link por e-mail e Google), Postgres com RLS, Storage (áudios)
+- Supabase: Auth (e-mail e senha), Postgres com RLS, Storage (áudios)
 - PWA: `app/manifest.ts` + `public/sw.js` (offline básico)
 - Web Audio API (AudioWorklet para gravar, OfflineAudioContext para mixar) + lamejs para codificar MP3 no aparelho
 - IA de texto: Gemini **ou** Groq (camada gratuita), sempre chamada pela rota server-side `/api/ia`
@@ -24,7 +24,8 @@ src/
     projetos/             # Lista + criar projeto
     projeto/              # Editor (/projeto?id=…): Letra · Cifra · Ideias · Ficha
     ideias/               # IA de acordes e temas avulsa
-    conta/                # Login (Google / link por e-mail), levar projetos pra nuvem
+    entrar/               # Tela de entrada: entrar, criar conta, recuperar senha
+    conta/                # Conta: trocar senha, levar projetos pra nuvem, sair
     auth/callback/        # Retorno do login (PKCE)
     offline/              # Página de fallback do service worker
     api/ia/route.ts       # Rota server-side da IA (com limite por IP)
@@ -65,6 +66,14 @@ Temas (pago, querência, fronteira, chimarrão, lida campeira) seguem a mesma l�
 
 Formato ChordPro: `[Em]Lá no meu [B7]pago`. Uma linha `{Refrão}` vira título de parte. Ao trocar o tom ou o capotraste, a tela mostra o tom que soa e o **desenho na mão**. Os diagramas são calculados para qualquer afinação (Padrão, Drop D, DADGAD, meio tom abaixo), e o botão “Sugerir capotraste” procura a casa em que os desenhos ficam mais fáceis.
 
+### Sons dos instrumentos
+
+Para ouvir as ideias de acordes, os instrumentos usam **gravações reais de notas**, que ficam dentro do app em `public/sons` (cerca de 2,5 MB). O service worker guarda esses arquivos no aparelho, então o som funciona offline.
+- **Violão nylon** e **piano**: gravações do *tonejs-instruments*.
+- **Gaita (acordeom)** e **contrabaixo acústico**: do *FluidR3_GM*.
+
+Os dois bancos têm licença CC-BY 3.0; os créditos estão em `public/sons/CREDITOS.txt` e na tela **Conta**. Para baixar os sons de novo: `node scripts/baixar-sons.mjs` (precisa de `ffmpeg`). Se as gravações ainda não carregaram, o app toca com o som sintetizado para nunca ficar mudo.
+
 ### Estúdio (Fase 2)
 
 Aba **Estúdio** do projeto: as faixas ficam empilhadas e coloridas por instrumento, numa linha do tempo comum marcada em compassos.
@@ -101,15 +110,14 @@ Sem as variáveis do Supabase, o app funciona por completo em **modo local**: os
 2. **SQL Editor → New query**: rode, nesta ordem:
    - `supabase/migrations/0001_fase1_projetos.sql`
    - `0002_fase2_faixas.sql` (cria a tabela `faixas` e o bucket privado `audios`, com RLS)
-   - `0003_acessos.sql` (lista de acessos com até 10 e-mails e o administrador) Se preferir a CLI, use `supabase link` e depois `supabase db push`.
-3. **Authentication → Hooks → Before User Created**: ative o hook do tipo *Postgres* e aponte para `public.hook_antes_de_criar_usuario`. Assim ninguém fora da lista consegue nem criar conta. Mesmo sem o hook, a RLS já impede quem não está na lista de ver ou gravar qualquer dado.
-4. **Authentication → Providers → Email**: deixe **Confirm email** ligado. Senão alguém poderia criar conta com um e-mail liberado que não é dele.
+   - `0004_sem_lista_de_acessos.sql` (acesso aberto: qualquer pessoa cria conta; também desfaz a antiga lista de 10 e-mails, se ela tiver sido criada) Se preferir a CLI, use `supabase link` e depois `supabase db push`.
+3. **Authentication → Hooks**: se você tinha ativado o hook *Before User Created* da versão antiga, pode desligá-lo (depois da `0004` ele não bloqueia ninguém).
+4. **Authentication → Providers → Email**: deixe **Email** ligado e, de preferência, **Confirm email** também ligado.
 5. **Authentication → URL Configuration**
    - *Site URL*: `https://SEU-APP.vercel.app`
    - *Redirect URLs*: `https://SEU-APP.vercel.app/auth/callback` e `http://localhost:3000/auth/callback`
 6. **Authentication → Providers**
-   - *Email*: já vem ligado (entrada por senha ou por link mágico).
-   - *Google*: crie um OAuth Client no Google Cloud Console (tipo “Web”). A URI de redirecionamento autorizada é `https://SEU-PROJETO.supabase.co/auth/v1/callback`. Depois cole o Client ID e o Secret no Supabase.
+   - *Email*: já vem ligado (entrada por e-mail e senha).
 7. **Project Settings → API**: copie a `URL` e a `anon public key`.
 
 ### 2. Chave de IA (gratuita)
@@ -124,19 +132,19 @@ Sem as variáveis do Supabase, o app funciona por completo em **modo local**: os
 3. Faça o deploy e atualize a *Site URL* do Supabase com o domínio final.
 4. No celular, abra o site e escolha **Adicionar à tela inicial** para instalar o PWA.
 
-## Acessos (até 10 e-mails)
+## Entrada no app (e-mail e senha)
 
-O app é fechado: só entram os e-mails da tabela `acessos`, com no máximo **10, contando o administrador**. O limite é garantido por trigger no banco.
+Com o Supabase configurado, o app abre na tela **Entrar** (`/entrar`). Lá dá pra:
+- entrar com e-mail e senha;
+- **criar conta** (qualquer pessoa pode; a confirmação vem por e-mail);
+- recuperar a senha por **Esqueci a senha**.
 
-- **Administrador ("quem manda")**: `luiscanabarro@hotmail.com`, definido na migração `0003_acessos.sql`. Na tela **Conta**, ele vê o painel *Acessos*, onde libera e remove e-mails.
-- **Primeiro acesso do administrador**: abra o app → **Conta** → **Criar conta** com esse e-mail e a senha escolhida. Depois confirme pelo link que chega no e-mail. A senha **não** fica no código nem no repositório.
-- **Membros**: depois de liberados, cada um usa **Criar conta** com o próprio e-mail. O login pode ser por senha, link por e-mail ou Google.
-- **Remover alguém** corta o acesso na hora. Os projetos da pessoa continuam guardados, mas ela não consegue mais abrir.
-- **Trocar o administrador ou o limite**: edite `0003_acessos.sql` (e `LIMITE_ACESSOS` em `src/lib/data/acessos.ts`) e rode de novo.
-- **Sem Supabase (modo local)** não há contas nem lista: tudo fica só no aparelho.
+Cada conta vê só os próprios projetos. A senha pode ser trocada em **Conta → Trocar senha**.
+
+Sem o Supabase configurado, o app funciona em **modo local**: não há login e os dados ficam só no aparelho.
 
 ## Segurança
 
-- RLS ligado: cada usuário só lê e altera os próprios projetos e áudios, e só se o e-mail estiver na lista de acessos. Um trigger impede trocar o dono.
+- RLS ligado: cada usuário só lê e altera os próprios projetos e áudios. Um trigger impede trocar o dono.
 - As chaves de IA ficam só no servidor (`server-only`). A rota `/api/ia` limita tamanho do pedido e frequência por IP.
 - A `anon key` é pública por design; a proteção dos dados vem do RLS.

@@ -1,9 +1,9 @@
 /* Alma Milongueira — service worker (offline básico) */
-const VERSAO = "galpao-v4";
+const VERSAO = "galpao-v5";
 const CACHE_PAGINAS = `${VERSAO}-paginas`;
 const CACHE_ESTATICO = `${VERSAO}-estatico`;
 
-const PAGINAS = ["/", "/projetos", "/projeto", "/ideias", "/conta", "/offline"];
+const PAGINAS = ["/", "/entrar", "/projetos", "/projeto", "/ideias", "/conta", "/offline"];
 const EXTRAS = ["/manifest.webmanifest", "/worklets/gravador.js", "/icones/icone-192.png", "/icones/icone-512.png", "/icones/icone.svg"];
 
 self.addEventListener("install", (event) => {
@@ -27,6 +27,12 @@ self.addEventListener("install", (event) => {
         }),
       );
       await Promise.all(EXTRAS.map((u) => estatico.add(u).catch(() => {})));
+      // Sons dos instrumentos (~2,5 MB): ficam no aparelho pra tocar sem internet
+      try {
+        const lista = await (await fetch("/sons/lista.json")).json();
+        const urls = Object.entries(lista).flatMap(([inst, notas]) => notas.map((m) => `/sons/${inst}/${m}.mp3`));
+        await Promise.all(urls.map((u) => estatico.add(u).catch(() => {})));
+      } catch {}
       await self.skipWaiting();
     })(),
   );
@@ -54,7 +60,7 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(navegacao(req, url));
     return;
   }
-  if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icones/")) {
+  if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icones/") || url.pathname.startsWith("/sons/")) {
     event.respondWith(cachePrimeiroEstatico(req));
     return;
   }

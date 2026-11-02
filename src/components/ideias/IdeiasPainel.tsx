@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { regrasAcordes } from "@/lib/ia/compositor";
 import { ideiasDeTema, LISTA_TEMAS, type IdeiaTema, type TemaId } from "@/lib/ia/temas";
-import { tocarProgressao, type Controle } from "@/lib/audio/tocador";
+import { preCarregar, tocarProgressao, type Controle } from "@/lib/audio/tocador";
 import { NOMES_INSTRUMENTO, type InstrumentoId } from "@/lib/audio/instrumentos";
 import { acordeNoTom } from "@/lib/music/harmonia";
 import { TONS_MAIORES, TONS_MENORES } from "@/lib/music/notas";
@@ -84,7 +84,10 @@ function PainelAcordes({
   const [tocando, setTocando] = useState<{ id: string; i: number | null } | null>(null);
   const controle = useRef<Controle | null>(null);
   const chave = `${ritmo}|${tom}`;
+  const [carregandoSom, setCarregandoSom] = useState(false);
   const instrumento = useSyncExternalStore(inscreverInstrumento, lerInstrumento, () => "violao" as InstrumentoId);
+  // já vai baixando as gravações do instrumento escolhido
+  useEffect(() => preCarregar(instrumento), [instrumento]);
 
   useEffect(() => () => controle.current?.parar(), []);
 
@@ -95,10 +98,17 @@ function PainelAcordes({
       return;
     }
     setTocando({ id, i: 0 });
-    controle.current = tocarProgressao(acordes, bpm ?? r.bpmPadrao, ritmo, instrumento, (i) => {
-      if (i === null) setTocando((t) => (t?.id === id ? null : t));
-      else setTocando({ id, i });
-    });
+    controle.current = tocarProgressao(
+      acordes,
+      bpm ?? r.bpmPadrao,
+      ritmo,
+      instrumento,
+      (i) => {
+        if (i === null) setTocando((t) => (t?.id === id ? null : t));
+        else setTocando({ id, i });
+      },
+      setCarregandoSom,
+    );
   }
 
   async function pedirIA() {
@@ -169,8 +179,10 @@ function PainelAcordes({
           controle.current?.parar();
           setTocando(null);
           gravarInstrumento(i);
+          preCarregar(i);
         }}
       />
+      {carregandoSom && <p className="text-center text-sm font-bold text-verde">Afinando o instrumento… (só na primeira vez)</p>}
 
       <h3 className="font-titulo text-xl font-bold text-couro-escuro">Do motor de teoria</h3>
       {regras.map((p, k) => (

@@ -18,7 +18,7 @@ function saudacao(): string {
 const semInscricao = () => () => {};
 
 export default function Inicio() {
-  const { repo, usuario, acesso, nuvemDisponivel, pronto } = useSessao();
+  const { repo, usuario, pronto } = useSessao();
   const [recentes, setRecentes] = useState<Projeto[] | null>(null);
   const ola = useSyncExternalStore(semInscricao, saudacao, () => "Buenas, tchê");
 
@@ -104,16 +104,8 @@ export default function Inicio() {
 
       <section className="mt-8 px-4">
         <Link href="/conta" className="flex items-center gap-3 rounded-2xl bg-creme-escuro/70 p-4 text-sm text-couro-escuro">
-          {usuario && acesso === "liberado" ? <Nuvem tamanho={28} /> : <Celular tamanho={28} />}
-          <span>
-            {usuario && acesso === "liberado"
-              ? `Guardando na nuvem como ${usuario.email}.`
-              : usuario
-                ? `${usuario.email} ainda não está na lista de acessos — guardando só neste aparelho.`
-                : nuvemDisponivel
-                  ? "Guardando só neste aparelho. Entra na conta pra guardar na nuvem."
-                  : "Guardando só neste aparelho (modo local)."}
-          </span>
+          {usuario ? <Nuvem tamanho={28} /> : <Celular tamanho={28} />}
+          <span>{usuario ? `Guardando na nuvem como ${usuario.email}.` : "Guardando só neste aparelho (modo local)."}</span>
         </Link>
       </section>
     </main>

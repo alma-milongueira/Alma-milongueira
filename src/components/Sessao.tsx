@@ -2,7 +2,6 @@
 
 import type { User } from "@supabase/supabase-js";
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { minhaSituacao, type SituacaoAcesso } from "@/lib/data/acessos";
 import { repositorioLocal } from "@/lib/data/local";
 import { criarRepositorioNuvem } from "@/lib/data/nuvem";
 import type { Repositorio } from "@/lib/data/tipos";
@@ -12,9 +11,6 @@ import { supabase, supabaseConfigurado } from "@/lib/supabase/client";
 type Ctx = {
   pronto: boolean;
   usuario: User | null;
-  /** Se o e-mail da conta está na lista de acessos. */
-  acesso: SituacaoAcesso | null;
-  admin: boolean;
   /** A pessoa chegou pelo link de "esqueci a senha" e precisa definir uma nova. */
   recuperandoSenha: boolean;
   fimRecuperacao: () => void;
@@ -27,8 +23,6 @@ type Ctx = {
 const SessaoCtx = createContext<Ctx>({
   pronto: false,
   usuario: null,
-  acesso: null,
-  admin: false,
   recuperandoSenha: false,
   fimRecuperacao: () => {},
   repo: repositorioLocal,
@@ -40,7 +34,6 @@ const SessaoCtx = createContext<Ctx>({
 export function SessaoProvider({ children }: { children: ReactNode }) {
   const [usuario, setUsuario] = useState<User | null>(null);
   const [pronto, setPronto] = useState(!supabaseConfigurado);
-  const [situacao, setSituacao] = useState<{ email: string; acesso: SituacaoAcesso; admin: boolean } | null>(null);
   const [recuperandoSenha, setRecuperandoSenha] = useState(false);
 
   useEffect(() => {
@@ -63,29 +56,12 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Confere a lista de acessos sempre que muda a conta
-  const email = usuario?.email ?? null;
-  useEffect(() => {
-    const sb = supabase();
-    if (!sb || !email) return;
-    let vivo = true;
-    minhaSituacao(sb, email).then((r) => vivo && setSituacao({ email, acesso: r.situacao, admin: r.admin }));
-    return () => {
-      vivo = false;
-    };
-  }, [email]);
-
   const valor = useMemo<Ctx>(() => {
     const sb = supabase();
-    const atual = situacao && situacao.email === email ? situacao : null;
-    const acesso: SituacaoAcesso | null = !usuario ? null : (atual?.acesso ?? "carregando");
-    // Sem a nuvem liberada, os dados ficam no aparelho (a RLS barraria tudo de qualquer jeito)
-    const naNuvem = !!(sb && usuario && acesso === "liberado");
+    const naNuvem = !!(sb && usuario);
     return {
-      pronto: pronto && acesso !== "carregando",
+      pronto,
       usuario,
-      acesso,
-      admin: !!atual?.admin,
       recuperandoSenha,
       fimRecuperacao: () => setRecuperandoSenha(false),
       nuvemDisponivel: supabaseConfigurado,
@@ -95,7 +71,7 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
         await sb?.auth.signOut();
       },
     };
-  }, [pronto, usuario, email, situacao, recuperandoSenha]);
+  }, [pronto, usuario, recuperandoSenha]);
 
   return <SessaoCtx.Provider value={valor}>{children}</SessaoCtx.Provider>;
 }
