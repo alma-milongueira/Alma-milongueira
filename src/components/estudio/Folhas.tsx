@@ -249,7 +249,7 @@ export function FolhaGravar({
   aoCalibrar: () => void;
 }) {
   const [guia, setGuia] = useState<Guia>(temOutras ? "ambos" : "click");
-  const [contagem, setContagem] = useState(4);
+  const [contagem, setContagem] = useState(3);
   if (!faixa) return null;
   const opcoes: { id: Guia; nome: string; desc: string }[] = [
     { id: "ambos", nome: "Faixas + click", desc: "Ouve o que já foi gravado e o metrônomo" },
@@ -282,11 +282,11 @@ export function FolhaGravar({
           </div>
         </div>
         <div>
-          <Rotulo>Contagem de entrada</Rotulo>
-          <div className="flex gap-2">
-            {[0, 2, 4].map((n) => (
+          <Rotulo>Contagem regressiva</Rotulo>
+          <div className="flex flex-wrap gap-2">
+            {[3, 4, 2, 0].map((n) => (
               <Chip key={n} ativo={contagem === n} onClick={() => setContagem(n)}>
-                {n ? `${n} tempos` : "Nenhuma"}
+                {n === 3 ? "3 · 2 · 1" : n ? `${n} tempos` : "Nenhuma"}
               </Chip>
             ))}
           </div>

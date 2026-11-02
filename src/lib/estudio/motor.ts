@@ -329,6 +329,8 @@ export class MotorEstudio {
 
     return {
       inicioCtx: tInicio,
+      /** Instantes (relógio do áudio) de cada batida da contagem de entrada. */
+      batidasContagem: contagem,
       cancelar: () => {
         this.parar();
         captura.cancelar();

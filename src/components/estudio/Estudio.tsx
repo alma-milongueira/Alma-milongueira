@@ -13,6 +13,7 @@ import { Botao, useAviso } from "../ui";
 import { Ajustes, Compartilhar, Gravar, Inicio, Lupa, Mais, Menos, Metronomo, Parar, Pausa, Play, Repetir } from "../Icones";
 import { ALTURA_PISTA, LARGURA_CABECA, Pista, type Onda } from "./Pista";
 import { Regua } from "./Regua";
+import { ContagemRegressiva } from "./ContagemRegressiva";
 import { FolhaCalibrar, FolhaExportar, FolhaGravar, FolhaMixer, FolhaNovaFaixa, formatarTempo, type OpcoesGravacao } from "./Folhas";
 
 const ZOOMS = [10, 20, 40, 80, 160, 320];
@@ -37,6 +38,8 @@ export function Estudio({ projeto }: { projeto: Projeto }) {
   const [tocando, setTocando] = useState(false);
   const [gravando, setGravando] = useState<Gravando | null>(null);
   const [processando, setProcessando] = useState<string | null>(null);
+  const [contagem, setContagem] = useState<{ batidas: number[]; inicio: number } | null>(null);
+  const fimContagem = useCallback(() => setContagem(null), []);
   const [loop, setLoop] = useState<[number, number] | null>(null);
   const [loopAtivo, setLoopAtivo] = useState(false);
   const [click, setClick] = useState(false);
@@ -274,6 +277,7 @@ export function Estudio({ projeto }: { projeto: Projeto }) {
       const comp = compensacaoAtual(m.ctx);
       const sessao = await m.gravar({ pos, guia: op.guia, contagem: op.contagem, bpm: projeto.bpm, tempos, excluir: f.id });
       setGravando({ faixaId: f.id, parar: sessao.parar, cancelar: sessao.cancelar, latenciaMs: comp.ms, pos });
+      if (sessao.batidasContagem.length) setContagem({ batidas: sessao.batidasContagem, inicio: sessao.inicioCtx });
       setTocando(true);
     } catch (e) {
       const msg =
@@ -550,6 +554,22 @@ export function Estudio({ projeto }: { projeto: Projeto }) {
         {!gravando && <span className="ml-auto pr-2 font-mono text-sm tabular-nums">{formatarTempo(pos)}</span>}
       </div>
       {processando && <p className="mt-2 text-center text-sm font-bold text-verde">{processando}</p>}
+
+      {contagem && gravando && (
+        <ContagemRegressiva
+          ctx={obterMotor().ctx}
+          batidas={contagem.batidas}
+          inicio={contagem.inicio}
+          aoTerminar={fimContagem}
+          aoCancelar={() => {
+            gravando.cancelar();
+            setGravando(null);
+            setTocando(false);
+            setContagem(null);
+            avisar("Gravação cancelada");
+          }}
+        />
+      )}
 
       <FolhaNovaFaixa aberta={folha === "nova"} lado={ladoNova} aoFechar={() => setFolha(null)} aoCriar={criarFaixa} />
       {folha === "mixer" && (

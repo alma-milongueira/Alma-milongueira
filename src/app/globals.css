@@ -73,3 +73,15 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Contagem regressiva do gravador */
+@keyframes contagem {
+  from {
+    transform: scale(1.35);
+    opacity: 0.2;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
